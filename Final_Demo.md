@@ -21,7 +21,7 @@ First, we use the UI to create a new task in the database via the `POST /tasks` 
 ![Creating a task to store it into MongoDB database](./Project_UI/Create.png)
 
 
-### Step 2: Submit a Reviewe for Full Review
+### Step 2: Submit a Review to Analyse
 
 Next, we use the UI to submit a review for the task we just created. This calls the `POST /full-review-text/{task_id}` endpoint.
 
@@ -49,5 +49,6 @@ Next, we use the UI to submit a review for a particular file. This calls the `PO
 ## Conclusion
 
 The agent successfully performed a contextual review, generated relevant feedback, and created a new task, demonstrating a complete, intelligent, and automated workflow.
+
 
 
