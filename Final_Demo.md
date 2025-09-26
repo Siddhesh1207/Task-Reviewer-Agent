@@ -18,24 +18,34 @@ This document demonstrates the end-to-end workflow of the Task Reviewer Agent, a
 First, we use the UI to create a new task in the database via the `POST /tasks` endpoint.
 
 **Input:**
-[Your Screenshot Here of the "Create a New Task" form filled out]
+![Creating a task to store it into MongoDB database](Project_UI/Screenshot 2025-09-27 011203.png)
 
-**Result:**
-[Your Screenshot Here of the "Success" message after creating the task]
 
-### Step 2: Submit a File for Full Review
+### Step 2: Submit a Reviewe for Full Review
 
-Next, we use the UI to submit a file for the task we just created. This calls the `POST /full-review-file/{task_id}` endpoint.
+Next, we use the UI to submit a review for the task we just created. This calls the `POST /full-review-text/{task_id}` endpoint.
 
 **Input:**
-[Your Screenshot Here of the "Submit for Review (via File)" form filled out]
+![Submission of the task](Project_UI/Screenshot 2025-09-27 011216.png)
 
 ### Step 3: View the Intelligent Results
 
 The agent processes the submission and returns a complete package containing the structured review, a generated feedback note, and a suggested next task.
 
 **Result:**
-[Your Screenshot Here of the "Results" section showing the review, note, and next task]
+[Output](Project_UI/Screenshot 2025-09-27 011241.png)
+[Output](Project_UI/Screenshot 2025-09-27 011248.png)
+
+### Added another feature to submit a File for Full Review
+
+Next, we use the UI to submit a review for a particular file. This calls the `POST /full-review-file/{task_id}` endpoint.
+
+**Input:**
+![Uploaded File agent.py](Project_UI/Screenshot 2025-09-27 011418.png)
+![Output](Project_UI/Screenshot 2025-09-27 011426.png)
+![Output](Project_UI/Screenshot 2025-09-27 011432.png)
+
 
 ## Conclusion
+
 The agent successfully performed a contextual review, generated relevant feedback, and created a new task, demonstrating a complete, intelligent, and automated workflow.
