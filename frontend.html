@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Reviewer Agent</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f4f7f9; color: #333; margin: 0; padding: 2rem; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1, h2 { color: #1a253c; }
+        h1 { text-align: center; }
+        .form-section, .results-section { margin-bottom: 2rem; padding: 1.5rem; border: 1px solid #e0e0e0; border-radius: 8px; }
+        label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+        input, textarea { width: 95%; padding: 0.75rem; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 1rem; font-size: 1rem; }
+        textarea { height: 120px; resize: vertical; }
+        button { background-color: #007bff; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: #0056b3; }
+        #results-container { display: none; margin-top: 2rem; }
+        pre { background-color: #eef2f5; padding: 1rem; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; font-family: "Courier New", Courier, monospace; }
+        .status { padding: 1rem; text-align: center; font-weight: bold; border-radius: 4px; margin-top: 1rem; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Task Reviewer Agent UI</h1>
+
+    <div class="form-section">
+        <h2>1. Create a New Task</h2>
+        <form id="create-task-form">
+            <label for="task-id">Task ID:</label>
+            <input type="text" id="task-id" value="task-005" required>
+            <label for="task-title">Title:</label>
+            <input type="text" id="task-title" value="Write a Python script" required>
+            <label for="task-description">Description:</label>
+            <textarea id="task-description" required>Write a Python script that prints 'Hello, World!' to the console. The submission must be a single .py file.</textarea>
+            <button type="submit">Create Task</button>
+        </form>
+        <div id="create-status"></div>
+    </div>
+
+    <div class="form-section">
+        <h2>2. Submit for Review (via Text)</h2>
+        <form id="review-form-text">
+            <label for="review-task-id-text">Task ID to Review:</label>
+            <input type="text" id="review-task-id-text" value="task-005" required>
+            <label for="submission-text">Submission Text:</label>
+            <textarea id="submission-text" required>print("Hello, World!")</textarea>
+            <button type="submit">Run Review on Text</button>
+        </form>
+    </div>
+
+    <div class="form-section">
+        <h2>3. Or Submit for Review (via File)</h2>
+        <form id="review-form-file">
+            <label for="review-task-id-file">Task ID to Review:</label>
+            <input type="text" id="review-task-id-file" value="task-005" required>
+            <label for="submission-file">Submission File (.py, .txt, etc.):</label>
+            <input type="file" id="submission-file" required>
+            <button type="submit">Run Review on File</button>
+        </form>
+    </div>
+
+    <div class="results-section" id="results-container">
+        <h2>4. Results</h2>
+        <h3>Review Score:</h3>
+        <pre id="review-output"></pre>
+        <h3>Feedback Note:</h3>
+        <pre id="note-output"></pre>
+        <h3>Suggested Next Task:</h3>
+        <pre id="next-task-output"></pre>
+    </div>
+</div>
+
+<script>
+    const API_BASE_URL = "http://127.0.0.1:8000";
+    const createTaskForm = document.getElementById('create-task-form');
+    const reviewFormText = document.getElementById('review-form-text');
+    const reviewFormFile = document.getElementById('review-form-file');
+    const createStatusDiv = document.getElementById('create-status');
+
+    createTaskForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const taskId = document.getElementById('task-id').value;
+        const title = document.getElementById('task-title').value;
+        const description = document.getElementById('task-description').value;
+        createStatusDiv.innerHTML = '';
+        try {
+            const response = await fetch(`${API_BASE_URL}/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: taskId, title, description })
+            });
+            const result = await response.json();
+            if (!response.ok) { throw new Error(result.detail || 'Failed to create task'); }
+            createStatusDiv.className = 'status success';
+            createStatusDiv.textContent = `Success: ${result.message}`;
+        } catch (error) {
+            createStatusDiv.className = 'status error';
+            createStatusDiv.textContent = `Error: ${error.message}`;
+        }
+    });
+
+    function displayResults(result) {
+        document.getElementById('review-output').textContent = JSON.stringify(result.review, null, 2);
+        document.getElementById('note-output').textContent = result.feedback_note.note;
+        document.getElementById('next-task-output').textContent = JSON.stringify(result.next_task, null, 2);
+        document.getElementById('results-container').style.display = 'block';
+    }
+
+    reviewFormText.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const taskId = document.getElementById('review-task-id-text').value;
+        const submissionText = document.getElementById('submission-text').value;
+        document.getElementById('results-container').style.display = 'none';
+        try {
+            const response = await fetch(`${API_BASE_URL}/full-review-text/${taskId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ submission_text: submissionText })
+            });
+            const result = await response.json();
+            if (!response.ok) { throw new Error(result.detail); }
+            displayResults(result);
+        } catch (error) { alert(`An error occurred: ${error.message}`); }
+    });
+
+    reviewFormFile.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const taskId = document.getElementById('review-task-id-file').value;
+        const submissionFile = document.getElementById('submission-file').files[0];
+        if (!submissionFile) { alert('Please select a file to submit.'); return; }
+        
+        const formData = new FormData();
+        formData.append('submission_file', submissionFile);
+        document.getElementById('results-container').style.display = 'none';
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/full-review-file/${taskId}`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (!response.ok) { throw new Error(result.detail); }
+            displayResults(result);
+        } catch (error) { alert(`An error occurred: ${error.message}`); }
+    });
+</script>
+
+</body>
+</html>
