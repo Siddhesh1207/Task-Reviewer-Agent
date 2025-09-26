@@ -26,6 +26,7 @@ First, we use the UI to create a new task in the database via the `POST /tasks` 
 Next, we use the UI to submit a review for the task we just created. This calls the `POST /full-review-text/{task_id}` endpoint.
 
 **Input:**
+
 ![Submission of the task](./Project_UI/FileUpload.png)
 
 ### Step 3: View the Intelligent Results
@@ -33,6 +34,7 @@ Next, we use the UI to submit a review for the task we just created. This calls 
 The agent processes the submission and returns a complete package containing the structured review, a generated feedback note, and a suggested next task.
 
 **Result:**
+
 ![Output](./Project_UI/File_Output1.png)
 ![Output](./Project_UI/File_Output2.png)
 
@@ -41,6 +43,7 @@ The agent processes the submission and returns a complete package containing the
 Next, we use the UI to submit a review for a particular file. This calls the `POST /full-review-file/{task_id}` endpoint.
 
 **Input:**
+
 ![Uploaded File agent.py](./Project_UI/Submission.png)
 ![Output](./Project_UI/Submission_Output1.png)
 ![Output](./Project_UI/Submission_Output2.png)
@@ -49,6 +52,7 @@ Next, we use the UI to submit a review for a particular file. This calls the `PO
 ## Conclusion
 
 The agent successfully performed a contextual review, generated relevant feedback, and created a new task, demonstrating a complete, intelligent, and automated workflow.
+
 
 
 
