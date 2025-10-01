@@ -1,0 +1,228 @@
+{
+	"info": {
+		"_postman_id": "9536a0b2-be0a-494a-b0c6-4323417868b6",
+		"name": "Feedback Sentiment (TASK2)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48826903",
+		"_collection_link": "https://siddheshsureshjr5-6694652.postman.co/workspace/Siddhesh's-Workspace~6770c0be-8dfd-4af5-8b9a-aa585b54d5f7/collection/48826903-9536a0b2-be0a-494a-b0c6-4323417868b6?action=share&source=collection_link&creator=48826903"
+	},
+	"item": [
+		{
+			"name": "Create task",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-API-Key",
+						"value": "{{AGENT_API_KEY}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"task_id\": \"postman-task-01\",\r\n    \"title\": \"Create a Postman Test\",\r\n    \"description\": \"A task to be tested via Postman to check the inout given is a calculator or not.\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/tasks",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"tasks"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Full review text",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-API-Key",
+						"value": "{{AGENT_API_KEY}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"submission_text\": \"This is my submission for the Postman test.\"\r\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/full-review-text/{task_id}",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"full-review-text",
+						"{task_id}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Feedback",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"sentiment\": \"up\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000//feedback/68dd2ec5082e20949d5b41cb",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"",
+						"feedback",
+						"68dd2ec5082e20949d5b41cb"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Generate next task",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-API-Key",
+						"value": "{{AGENT_API_KEY}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/generate-next-task/68dd2ec5082e20949d5b41cb",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"generate-next-task",
+						"68dd2ec5082e20949d5b41cb"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Full review via file",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-API-Key",
+						"value": "{{AGENT_API_KEY}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "submission_file",
+							"type": "file",
+							"src": []
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/full-review-file/postman-task-01",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"full-review-file",
+						"postman-task-01"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "AGENT_API_KEY",
+			"value": "",
+			"type": "default"
+		}
+	]
+}
