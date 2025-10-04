@@ -20,10 +20,10 @@
         h1 { text-align: center; font-size: 2.5rem; margin-bottom: 2rem; font-weight: 700; }
         .page { display: none; opacity: 0; transition: opacity 0.3s ease-in-out; }
         .page.active { display: block; opacity: 1; }
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
         .card { background: var(--background-light); border-radius: 14px; padding: 2rem; text-align: center; box-shadow: var(--card-shadow-light); border: 1px solid var(--border-color); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
         .card:hover { transform: translateY(-7px); box-shadow: var(--card-shadow-hover); }
-        .card h2 { margin-bottom: 0.75rem; color: var(--primary-blue); }
+        .card h2 { margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.25rem; }
         .form-section { background: linear-gradient(145deg, #f0f9ff, #e0f2fe); border-radius: 18px; padding: 2rem 2.5rem; margin-top: 2rem; border: 1px solid #bfdbfe; box-shadow: 0 8px 24px rgba(74, 144, 226, 0.15); }
         label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
         input, textarea { box-sizing: border-box; width: 100%; padding: 0.85rem; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 1rem; font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s; }
@@ -45,7 +45,6 @@
         .feedback-section { text-align: center; background: #fff; padding: 1.5rem; border-radius: 12px; margin-top: 2rem; border: 1px solid var(--border-color); }
         .feedback-section button { font-size: 1.5rem; padding: 0.5rem 1rem; background: none; border: none; cursor: pointer; transition: transform 0.2s; }
         .feedback-section button:hover { transform: scale(1.2); }
-        /* <-- NEW: Style for the generate next task button --> */
         #generate-next-task-btn { background: var(--accent-teal); }
         #generate-next-task-btn:hover { background: #16a085; }
     </style>
@@ -73,7 +72,8 @@
               <h2>2. Choose Review Method</h2>
               <div class="card-grid">
                 <div class="card" onclick="showPage('text-review')"><h2>✍️ Review via Text</h2><p>Submit your task solution directly as text.</p></div>
-                <div class="card" onclick="showPage('file-review')"><h2>📂 Review via File Upload</h2><p>Upload a file for review.</p></div>
+                <div class="card" onclick="showPage('file-review')"><h2>📂 Review via File</h2><p>Upload a file for review.</p></div>
+                <div class="card" onclick="showPage('link-review')"><h2>🔗 Review via Link</h2><p>Submit a GitHub link to your file.</p></div>
               </div>
               <button class="back-btn" onclick="showPage('create-task-page')">⬅ Back to Create Task</button>
         </div>
@@ -95,46 +95,48 @@
             </form>
             <button class="back-btn" onclick="showPage('review-options-page')">⬅ Back</button>
         </div>
+
+        <div class="page form-section" id="link-review">
+            <h2>Submit via GitHub Link</h2>
+            <form id="review-form-link">
+                <label for="review-task-id-link">Task ID:</label><input type="text" id="review-task-id-link" readonly>
+                <label for="submission-link">GitHub Link:</label><input type="url" id="submission-link" placeholder="https://github.com/user/repo/blob/main/file.py" required>
+                <div class="button-group"><button type="submit">Run Review</button><div class="spinner" id="spinner-link"></div></div>
+            </form>
+            <button class="back-btn" onclick="showPage('review-options-page')">⬅ Back</button>
+        </div>
         
         <div class="page results-section" id="results-container">
             <h2>Review Results</h2>
             <div class="result-card"><div class="card-header score-header">✅ Review Score</div><pre class="card-body" id="review-output"></pre></div>
             <div class="result-card"><div class="card-header feedback-header">💡 Feedback Note</div><pre class="card-body" id="note-output"></pre></div>
-            
-            <div class="result-card" id="next-task-card" style="display: none;">
-                <div class="card-header nexttask-header">📌 Suggested Next Task</div>
-                <pre class="card-body" id="next-task-output"></pre>
-            </div>
-
+            <div class="result-card" id="next-task-card" style="display: none;"><div class="card-header nexttask-header">📌 Suggested Next Task</div><pre class="card-body" id="next-task-output"></pre></div>
             <div class="feedback-section" id="feedback-section">
                 <h3>Was this review helpful?</h3>
-                <button id="thumb-up-btn">👍</button>
-                <button id="thumb-down-btn">👎</button>
+                <button id="thumb-up-btn">👍</button> <button id="thumb-down-btn">👎</button>
                 <div id="feedback-status" style="margin-top: 1rem;"></div>
             </div>
-
             <div class="button-group" style="justify-content: center; margin-top: 1rem;">
                 <button id="generate-next-task-btn" style="display: none;">Generate Next Task</button>
                 <div class="spinner" id="spinner-next-task" style="display: none;"></div>
             </div>
-            
             <button class="back-btn" id="finish-btn" onclick="goHome()">🎉 Finish & Start Over</button>
         </div>
     </div>
 
     <script>
         const API_BASE_URL = "http://127.0.0.1:8000";
-        const API_KEY = ""; // <-- 🚨 IMPORTANT: REPLACE WITH YOUR KEY FROM .env
+        const API_KEY = "BHIV"; // <-- 🚨 IMPORTANT: REPLACE WITH YOUR KEY FROM .env
         const HEADERS = { 'Content-Type': 'application/json', 'X-API-Key': API_KEY };
-
         let currentReviewId = null; 
 
         const createTaskForm = document.getElementById('create-task-form');
         const reviewFormText = document.getElementById('review-form-text');
         const reviewFormFile = document.getElementById('review-form-file');
+        // <-- NEW: Get the link form -->
+        const reviewFormLink = document.getElementById('review-form-link');
         const thumbUpBtn = document.getElementById('thumb-up-btn');
         const thumbDownBtn = document.getElementById('thumb-down-btn');
-        // <-- NEW: Get the new button -->
         const generateNextTaskBtn = document.getElementById('generate-next-task-btn');
 
         function showPage(pageId) {
@@ -158,8 +160,12 @@
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.detail || 'Failed to create task');
+                
+                // <-- MODIFIED: Pre-fill all three forms -->
                 document.getElementById('review-task-id-text').value = taskId;
                 document.getElementById('review-task-id-file').value = taskId;
+                document.getElementById('review-task-id-link').value = taskId;
+                
                 showPage('review-options-page');
             } catch (error) {
                 statusDiv.className = 'status error'; statusDiv.textContent = `Error: ${error.message}`;
@@ -168,23 +174,20 @@
             }
         });
 
-        // <-- MODIFIED: This function only displays the initial review and resets the UI -->
         function displayResults(result) {
             currentReviewId = result.review_id; 
             document.getElementById('review-output').textContent = JSON.stringify(result.review, null, 2);
             document.getElementById('note-output').textContent = result.feedback_note.note;
-            
-            // Reset the UI state for a new review
             document.getElementById('feedback-section').style.display = 'block';
             document.getElementById('next-task-card').style.display = 'none';
             generateNextTaskBtn.style.display = 'none';
             thumbUpBtn.disabled = false;
             thumbDownBtn.disabled = false;
             document.getElementById('feedback-status').innerHTML = '';
-
             showPage('results-container');
         }
 
+        // <-- MODIFIED: handleReview now supports the link form -->
         async function handleReview(form, spinner) {
             spinner.style.display = 'block'; form.querySelector('button[type="submit"]').disabled = true;
             try {
@@ -193,11 +196,15 @@
                     const taskId = document.getElementById('review-task-id-text').value;
                     const submissionText = document.getElementById('submission-text').value;
                     response = await fetch(`${API_BASE_URL}/full-review-text/${taskId}`, { method: 'POST', headers: HEADERS, body: JSON.stringify({ submission_text: submissionText }) });
-                } else {
+                } else if (form.id === 'review-form-file') {
                     const taskId = document.getElementById('review-task-id-file').value;
                     const formData = new FormData();
                     formData.append('submission_file', document.getElementById('submission-file').files[0]);
                     response = await fetch(`${API_BASE_URL}/full-review-file/${taskId}`, { method: 'POST', headers: { 'X-API-Key': API_KEY }, body: formData });
+                } else if (form.id === 'review-form-link') { // <-- NEW: Logic for link submission -->
+                    const taskId = document.getElementById('review-task-id-link').value;
+                    const submissionLink = document.getElementById('submission-link').value;
+                    response = await fetch(`${API_BASE_URL}/full-review-link/${taskId}`, { method: 'POST', headers: HEADERS, body: JSON.stringify({ submission_link: submissionLink }) });
                 }
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.detail || 'An unknown error occurred.');
@@ -209,58 +216,46 @@
             }
         }
         
-        // <-- MODIFIED: This function now contains the conditional logic -->
         async function sendFeedback(sentiment) {
+            // ... (this function is the same as before)
             if (!currentReviewId) return;
             const statusDiv = document.getElementById('feedback-status');
             statusDiv.className = 'status';
             statusDiv.textContent = 'Sending feedback...';
             thumbUpBtn.disabled = true; thumbDownBtn.disabled = true;
-            
             try {
                 const response = await fetch(`${API_BASE_URL}/feedback/${currentReviewId}`, {
-                    method: 'POST', headers: HEADERS,
-                    body: JSON.stringify({ sentiment: sentiment })
+                    method: 'POST', headers: HEADERS, body: JSON.stringify({ sentiment: sentiment })
                 });
-                if (!response.ok) {
-                    const result = await response.json();
-                    throw new Error(result.detail || 'Failed to send feedback.');
-                }
-
+                if (!response.ok) { const result = await response.json(); throw new Error(result.detail || 'Failed to send feedback.'); }
                 document.getElementById('feedback-section').style.display = 'none';
-
                 if (sentiment === 'up') {
-                    generateNextTaskBtn.style.display = 'block'; // Show the "Generate" button
-                } else { // sentiment === 'down'
+                    generateNextTaskBtn.style.display = 'block';
+                } else {
                     statusDiv.className = 'status';
                     statusDiv.textContent = `Thank you for the feedback. Please consider revising your task and trying again.`;
                 }
-
             } catch (error) {
                 statusDiv.className = 'status error'; statusDiv.textContent = `Error: ${error.message}`;
                 thumbUpBtn.disabled = false; thumbDownBtn.disabled = false;
             }
         }
 
-        // <-- NEW: This function calls the new endpoint -->
         async function generateNextTask() {
+            // ... (this function is the same as before)
             if (!currentReviewId) return;
             const spinner = document.getElementById('spinner-next-task');
             spinner.style.display = 'block';
             generateNextTaskBtn.disabled = true;
-
             try {
                 const response = await fetch(`${API_BASE_URL}/generate-next-task/${currentReviewId}`, {
-                    method: 'POST',
-                    headers: { 'X-API-Key': API_KEY }
+                    method: 'POST', headers: { 'X-API-Key': API_KEY }
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.detail || 'Failed to generate next task.');
-
                 document.getElementById('next-task-output').textContent = JSON.stringify(result.next_task, null, 2);
                 document.getElementById('next-task-card').style.display = 'block';
                 generateNextTaskBtn.style.display = 'none'; 
-
             } catch (error) {
                 alert(`Error generating next task: ${error.message}`);
                 generateNextTaskBtn.disabled = false;
@@ -271,6 +266,9 @@
 
         reviewFormText.addEventListener('submit', (e) => { e.preventDefault(); handleReview(reviewFormText, document.getElementById('spinner-text')); });
         reviewFormFile.addEventListener('submit', (e) => { e.preventDefault(); handleReview(reviewFormFile, document.getElementById('spinner-file')); });
+        // <-- NEW: Event listener for the link form -->
+        reviewFormLink.addEventListener('submit', (e) => { e.preventDefault(); handleReview(reviewFormLink, document.getElementById('spinner-link')); });
+
         thumbUpBtn.addEventListener('click', () => sendFeedback('up'));
         thumbDownBtn.addEventListener('click', () => sendFeedback('down'));
         generateNextTaskBtn.addEventListener('click', generateNextTask);
