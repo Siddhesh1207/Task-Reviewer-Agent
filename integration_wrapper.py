@@ -9,16 +9,21 @@ class TaskReviewerClient:
     def __init__(self, base_url: str, api_key: str):
         self.base_url = base_url.rstrip('/')
         self.api_key = api_key
-        self.headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
+        # Base headers for JSON requests
+        self.json_headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
+        # Headers for other requests (e.g., file uploads)
+        self.base_headers = {"X-API-Key": self.api_key}
 
-    def _request(self, method: str, endpoint: str, data: dict = None) -> dict:
-        """Helper method to handle GET and POST requests."""
+    def _request(self, method: str, endpoint: str, data: dict = None, files: dict = None) -> dict:
+        """Helper method to handle different types of requests."""
         url = f"{self.base_url}/{endpoint}"
+        headers = self.json_headers if data else self.base_headers
+        
         try:
             if method.upper() == 'POST':
-                response = requests.post(url, headers=self.headers, json=data if data else {})
+                response = requests.post(url, headers=headers, json=data, files=files)
             elif method.upper() == 'GET':
-                response = requests.get(url, headers=self.headers)
+                response = requests.get(url, headers=headers)
             else:
                 raise ValueError("Unsupported HTTP method")
             
@@ -30,95 +35,90 @@ class TaskReviewerClient:
             print(f"🔴 Request failed: {e}")
         return None
 
-    # --- Functions required by the Task 3 PDF ---
+    # --- Review Trigger Functions ---
 
     def trigger_review(self, task_id: str, submission_link: str) -> dict:
-        """Triggers a review by submitting a link to the agent."""
+        """(Primary) Triggers a review by submitting a link."""
         payload = {"submission_link": submission_link}
         return self._request('POST', f"review/link/{task_id}", data=payload)
 
+    def trigger_review_with_text(self, task_id: str, submission_text: str) -> dict:
+        """Triggers a review by submitting raw text."""
+        payload = {"submission_text": submission_text}
+        return self._request('POST', f"review/text/{task_id}", data=payload)
+
+    def trigger_review_with_file(self, task_id: str, file_path: str) -> dict:
+        """Triggers a review by uploading a file."""
+        if not os.path.exists(file_path):
+            print(f"🔴 File not found at path: {file_path}")
+            return None
+        with open(file_path, 'rb') as f:
+            files = {'submission_file': (os.path.basename(file_path), f)}
+            return self._request('POST', f"review/file/{task_id}", files=files)
+
+    # --- Other Functions (get_feedback, mark_done, etc.) ---
+    
     def get_feedback(self, review_id: str) -> dict:
-        """Fetches the full review details, including scores and feedback."""
+        """Fetches the full review details."""
         return self._request('GET', f"review/{review_id}")
 
     def mark_done(self, review_id: str) -> dict:
-        """Marks a task as fully completed after review and feedback."""
+        """Marks a task as fully completed."""
         return self._request('POST', f"mark-done/{review_id}")
 
-    # --- Other Helper Functions ---
-    
     def create_task_definition(self, task_id: str, title: str, description: str) -> dict:
-        """Creates the initial task definition in the agent's database."""
+        """Creates the initial task definition."""
         payload = {"task_id": task_id, "title": title, "description": description}
         return self._request('POST', "tasks", data=payload)
 
     def send_feedback_with_dhi(self, review_id: str, sentiment: str, dhi_scores: dict) -> dict:
-        """Sends admin feedback, including DHI scores, to unlock the workflow."""
+        """Sends admin feedback with DHI scores."""
         payload = {"sentiment": sentiment, "dhi_scores": dhi_scores}
         return self._request('POST', f"feedback/{review_id}", data=payload)
 
     def generate_next_task(self, review_id: str) -> dict:
-        """Generates the next task after a successful review and feedback."""
+        """Generates the next task after feedback."""
         return self._request('POST', f"generate-next-task/{review_id}")
 
 
-# --- Example End-to-End Workflow ---
+# --- Example Usage ---
 if __name__ == '__main__':
     load_dotenv()
     AGENT_URL = "http://127.0.0.1:8000"
     API_KEY = os.getenv("AGENT_API_KEY", "default-secret-key")
     
-    # Use a dynamic task_id for each run to avoid conflicts
-    from datetime import datetime
-    task_id_from_command = f"cli-task-{datetime.now().strftime('%H%M%S')}"
-    
-    print(f"✅ Using Task ID: {task_id_from_command}")
     client = TaskReviewerClient(base_url=AGENT_URL, api_key=API_KEY)
 
-    # 1. Create the task definition
-    print("\n--- 1. Creating task definition... ---")
-    task_data = client.create_task_definition(
-        task_id=task_id_from_command, 
-        title="Create a simple Python function", 
-        description="Write a function that returns the string 'hello'."
-    )
-    if not task_data: sys.exit(1)
-    print(json.dumps(task_data, indent=2))
+    # Create a test file for the file upload example
+    with open("temp_submission.py", "w") as f:
+        f.write("def my_function():\n    return 'hello from file'")
 
-    # 2. Trigger the review
-    print("\n--- 2. Submitting for review... ---")
-    # This must be a link to a raw file, like a GitHub Gist's "Raw" link.
+    # --- Choose ONE of the examples below to run ---
+
+    # Example 1: Submit via Link (Primary Method)
+    print("\n--- Testing Submission via Link ---")
+    task_id_link = f"cli-task-link-{datetime.now().strftime('%H%M%S')}"
+    client.create_task_definition(task_id_link, "Link Task", "A test task for link submission.")
     link = "https://gist.githubusercontent.com/siddhesh-suresh-test/912c75f0a0e5c9a0c6a583e74a625a72/raw/4c0c4519967272847c2e0b115ba923380442e61c/test_submission.py"
-    review_result = client.trigger_review(task_id_from_command, submission_link=link)
-    if not review_result: sys.exit(1)
-    print("✅ Initial review received. Status is 'pending_feedback'.")
-    review_id = review_result["review_id"]
-    
-    # 3. (Pre-feedback) Try to generate the next task - THIS SHOULD FAIL
-    print(f"\n--- 3. Trying to generate next task for review {review_id} (should be locked)... ---")
-    client.generate_next_task(review_id) # Expected to print an HTTP 423 Error
+    review_result = client.trigger_review(task_id_link, submission_link=link)
+    if review_result:
+        print(json.dumps(review_result, indent=2))
 
-    # 4. Send feedback with DHI scores to unlock the workflow
-    print(f"\n--- 4. Sending feedback for review {review_id} to unlock... ---")
-    dhi_payload = {"dignity": 8, "honesty": 9, "integrity": 8}
-    feedback_response = client.send_feedback_with_dhi(review_id, "up", dhi_payload)
-    if not feedback_response: sys.exit(1)
-    print("✅ Feedback sent. Status is now 'feedback_provided'.")
+    # Example 2: Submit via Text
+    # print("\n--- Testing Submission via Text ---")
+    # task_id_text = f"cli-task-text-{datetime.now().strftime('%H%M%S')}"
+    # client.create_task_definition(task_id_text, "Text Task", "A test task for text submission.")
+    # review_result = client.trigger_review_with_text(task_id_text, "def hello_world(): return 'hello'")
+    # if review_result:
+    #     print(json.dumps(review_result, indent=2))
 
-    # 5. Generate the next task - THIS SHOULD SUCCEED
-    print(f"\n--- 5. Generating next task for review {review_id} (should succeed)... ---")
-    next_task_response = client.generate_next_task(review_id)
-    if not next_task_response: sys.exit(1)
-    print(json.dumps(next_task_response, indent=2))
+    # Example 3: Submit via File
+    # print("\n--- Testing Submission via File ---")
+    # task_id_file = f"cli-task-file-{datetime.now().strftime('%H%M%S')}"
+    # client.create_task_definition(task_id_file, "File Task", "A test task for file submission.")
+    # review_result = client.trigger_review_with_file(task_id_file, "temp_submission.py")
+    # if review_result:
+    #     print(json.dumps(review_result, indent=2))
 
-    # 6. Get the final, complete review data
-    print(f"\n--- 6. Fetching final review record for review {review_id}... ---")
-    final_record = client.get_feedback(review_id)
-    if not final_record: sys.exit(1)
-    print(json.dumps(final_record, indent=2))
-
-    # 7. Mark the task as done
-    print(f"\n--- 7. Marking review {review_id} as complete... ---")
-    done_response = client.mark_done(review_id)
-    if not done_response: sys.exit(1)
-    print(json.dumps(done_response, indent=2))
+    # Clean up the created test file
+    os.remove("temp_submission.py")
