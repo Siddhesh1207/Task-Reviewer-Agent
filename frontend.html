@@ -2,276 +2,588 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Task Reviewer Agent</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Reviewer Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-blue: #4a90e2; --primary-hover: #357bd9; --accent-teal: #1abc9c;
-            --background-light: #f4f6f9; --background-gradient: linear-gradient(135deg, #eef2f7 0%, #d8e3ed 100%);
-            --text-dark: #1f2937; --text-light: #6b7280; --border-color: #d1d5db; --card-bg: #ffffff;
-            --card-shadow-light: 0 4px 15px rgba(0, 0, 0, 0.05); --card-shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.1);
-            --code-bg: #f3f4f6;
+            --primary-hue: 217;
+            --primary: hsl(var(--primary-hue), 91%, 60%);
+            --primary-hover: hsl(var(--primary-hue), 91%, 55%);
+            --primary-light: hsl(var(--primary-hue), 100%, 97%);
+            --accent-hue: 158;
+            --accent: hsl(var(--accent-hue), 79%, 46%);
+            --danger-hue: 0;
+            --danger: hsl(var(--danger-hue), 84%, 60%);
+            --background: #f0f2f5;
+            --sidebar-bg: #1e293b;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-inverted: #f8fafc;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
-        body { font-family: 'Inter', sans-serif; background: var(--background-gradient); margin: 0; padding: 2rem; color: var(--text-dark); }
-        .container { max-width: 900px; margin: auto; background: linear-gradient(135deg, #fdfefe, #f1f5f9); padding: 2.5rem; border-radius: 18px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05); }
-        h1 { text-align: center; font-size: 2.5rem; margin-bottom: 2rem; font-weight: 700; }
-        .page { display: none; opacity: 0; transition: opacity 0.3s ease-in-out; }
-        .page.active { display: block; opacity: 1; }
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
-        .card { background: var(--background-light); border-radius: 14px; padding: 2rem; text-align: center; box-shadow: var(--card-shadow-light); border: 1px solid var(--border-color); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
-        .card:hover { transform: translateY(-7px); box-shadow: var(--card-shadow-hover); }
-        .card h2 { margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.25rem; }
-        .form-section { background: linear-gradient(145deg, #f0f9ff, #e0f2fe); border-radius: 18px; padding: 2rem 2.5rem; margin-top: 2rem; border: 1px solid #bfdbfe; box-shadow: 0 8px 24px rgba(74, 144, 226, 0.15); }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+        .icon { width: 1.25em; height: 1.25em; vertical-align: middle; }
+
+        /* --- Global Header --- */
+        .header {
+            background-color: var(--card-bg);
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header h1 { font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.75rem;}
+        .logout-btn {
+            background: var(--danger);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        .logout-btn:hover { background-color: hsl(var(--danger-hue), 84%, 55%); }
+
+        /* --- Page & Layout --- */
+        main { padding: 2rem; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Login Page --- */
+        .login-wrapper { display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+        .login-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 450px;
+        }
+        .login-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+        .tab-btn {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .login-form { display: none; }
+        .login-form.active { display: block; }
+        
+        /* --- Dashboard --- */
+        .dashboard-grid { display: grid; grid-template-columns: 260px 1fr; gap: 2rem; }
+        .dashboard-sidebar {
+            background-color: var(--sidebar-bg);
+            color: var(--text-inverted);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            align-self: start; /* Sticky behavior */
+            position: sticky;
+            top: 100px;
+        }
+        .dashboard-sidebar h2 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-top: 0; }
+        .sidebar-list { list-style: none; padding: 0; margin: 0; }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #cbd5e1;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-link:hover { background-color: hsla(0, 0%, 100%, 0.1); color: var(--text-inverted); }
+        .sidebar-link.selected {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+            border-left-color: var(--primary);
+        }
+        
+        /* --- Cards & Panels --- */
+        .card { background: var(--card-bg); border-radius: 16px; padding: 2rem; box-shadow: var(--shadow-md); margin-bottom: 1.5rem; }
+        .card h3, .card h4 { margin-top: 0; }
+        .choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+        .choice-card {
+            background: var(--primary-light);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .choice-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--primary); }
+        .choice-card h3 { color: var(--primary); font-size: 1.1rem; margin: 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+
+        /* --- Form Elements --- */
         label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
-        input, textarea { box-sizing: border-box; width: 100%; padding: 0.85rem; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 1rem; font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s; }
-        input:focus, textarea:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.2); outline: none; }
-        textarea { height: 120px; resize: vertical; }
-        .button-group { display: flex; gap: 1rem; align-items: center; }
-        button { background: var(--primary-blue); color: white; border: none; padding: 0.95rem 1.8rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s, box-shadow 0.2s; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2); }
-        button:hover { background: var(--primary-hover); box-shadow: 0 6px 15px rgba(53, 123, 217, 0.3); }
-        button:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; }
-        .back-btn { background: #6b7280; box-shadow: none; }
-        .result-card { background: #fff; border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 1.5rem; overflow: hidden; box-shadow: var(--card-shadow-light); }
-        .card-header { padding: 0.75rem 1.25rem; font-weight: 600; color: white; display: flex; align-items: center; gap: 0.5rem; }
-        .score-header { background: #16a34a; } .feedback-header { background: #f59e0b; } .nexttask-header { background: #4a90e2; }
-        .card-body { padding: 1.25rem; font-size: 0.95rem; background: var(--code-bg); font-family: 'JetBrains Mono', monospace; white-space: pre-wrap; word-wrap: break-word; }
-        .spinner { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; display: none; }
+        input[type="text"], input[type="password"], input[type="url"], input[type="file"], textarea {
+            width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-color);
+            border-radius: 8px; font-size: 1rem; box-sizing: border-box; margin-bottom: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px hsla(var(--primary-hue), 91%, 60%, 0.2);
+            outline: none;
+        }
+        textarea { min-height: 150px; font-family: 'JetBrains Mono', monospace; }
+        button {
+            background: var(--primary); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px;
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        button:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        button:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+        .spinner {
+            width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%; border-top-color: #fff; animation: spin 1s linear infinite;
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .status { padding: 1rem; text-align: center; font-weight: bold; border-radius: 8px; margin-top: 1rem; }
-        .success { background-color: #dcfce7; color: #166534; } .error { background-color: #fee2e2; color: #991b1b; }
-        .feedback-section { text-align: center; background: #fff; padding: 1.5rem; border-radius: 12px; margin-top: 2rem; border: 1px solid var(--border-color); }
-        .feedback-section button { font-size: 1.5rem; padding: 0.5rem 1rem; background: none; border: none; cursor: pointer; transition: transform 0.2s; }
-        .feedback-section button:hover { transform: scale(1.2); }
-        #generate-next-task-btn { background: var(--accent-teal); }
-        #generate-next-task-btn:hover { background: #16a085; }
+
+        /* --- Data Display --- */
+        .data-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.75rem 1.5rem; align-items: center; }
+        .data-grid dt { font-weight: 600; color: var(--text-secondary); text-align: right; }
+        .data-grid dd { margin: 0; }
+        .score-badge { font-size: 1.5rem; font-weight: 700; padding: 0.5rem 1rem; border-radius: 8px; color: white; }
+        .score-ai { background-color: #6366f1; } .score-overall { background-color: var(--accent); }
+        .status-tag {
+            font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+            padding: 0.25rem 0.75rem; border-radius: 99px; letter-spacing: 0.05em;
+        }
+        .status-pending_feedback { background-color: #fef9c3; color: #854d0e; }
+        .status-feedback_provided { background-color: #dcfce7; color: #166534; }
+        .status-completed { background-color: #e0e7ff; color: #3730a3; }
+        .objectives-list { list-style-type: '✅'; padding-left: 1.5rem; }
+        .objectives-list li { padding-left: 0.5rem; margin-bottom: 0.5rem; }
+
+        @media (max-width: 900px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .dashboard-sidebar { position: static; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Task Reviewer Agent</h1>
-        <div class="page active" id="home-page">
-            <div class="card-grid">
-                <div class="card" onclick="showPage('create-task-page')"><h2>🚀 Start Here: Create a New Task</h2><p>First, define a task and save it to the database.</p></div>
+    <header class="header" style="display: none;">
+        <h1>
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20H4Zm2-4h12V8H6v8Z"/></svg>
+            Task Reviewer AI
+        </h1>
+        <button class="logout-btn" onclick="logout()">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h7v2H5v14h7v2H5Zm11-4-1.375-1.45 2.55-2.55H9v-2h8.175l-2.55-2.55L16 7l5 5-5 5Z"/></svg>
+            Logout
+        </button>
+    </header>
+
+    <main>
+        <div class="page active" id="login-page">
+            <div class="login-wrapper">
+                <div class="login-card">
+                    <div class="login-tabs">
+                        <button class="tab-btn active" onclick="switchLoginTab('user')">
+                             <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12q-1.65 0-2.825-1.175T8 8q0-1.65 1.175-2.825T12 4q1.65 0 2.825 1.175T16 8q0 1.65-1.175 2.825T12 12Zm0 8q-3.325 0-5.662-2.337T4 12q0-3.325 2.338-5.663T12 4q3.325 0 5.663 2.337T20 12q0 3.325-2.337 5.663T12 20Z"/></svg>
+                            User
+                        </button>
+                        <button class="tab-btn" onclick="switchLoginTab('admin')">
+                             <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22q-3.45 0-6.012-2.1T2.35 14.9q.225-.9.938-1.55T5 12.6q.35 0 .675.063t.625.187q1.1.45 2.325.688T11.25 13.6q-1.35-1.1-2.25-2.65T8 8.15q0-1.825 1.25-3.15T12.5 3.35q1.5 0 2.75 1.325T16.5 8.15q0 1.6-1.025 3.2T13 13.6q1.125 0 2.338-.237t2.212-.713q.3-.125.6-.187t.55-.063q1.125 0 1.838.65t.937 1.55q-1.2 5-3.637 7.05T12 22Z"/></svg>
+                            Admin
+                        </button>
+                    </div>
+                    <form id="user-login-form" class="login-form active">
+                        <h2>User Login</h2>
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" value="test_user" required>
+                        <button type="submit">Login</button>
+                    </form>
+                    <form id="admin-login-form" class="login-form">
+                        <h2>Admin Login</h2>
+                        <label for="admin-password">Password:</label>
+                        <input type="password" id="admin-password" placeholder="••••••••••" required>
+                        <button type="submit">Login <span class="spinner" style="display:none;"></span></button>
+                    </form>
+                </div>
             </div>
-        </div>
-        <div class="page form-section" id="create-task-page">
-            <h2>1. Create a New Task</h2>
-            <form id="create-task-form">
-                <label for="task-id">Task ID:</label><input type="text" id="task-id" value="task-001" required>
-                <label for="task-title">Title:</label><input type="text" id="task-title" value="Create a basic Python function" required>
-                <label for="task-description">Description:</label><textarea id="task-description" required>Write a Python function that takes two numbers and returns their sum.</textarea>
-                <div class="button-group"><button type="submit">Create and Proceed</button><div class="spinner" id="spinner-create"></div></div>
-            </form>
-            <div id="create-status"></div>
-            <button class="back-btn" onclick="goHome()">⬅ Back to Home</button>
-        </div>
-        <div class="page" id="review-options-page">
-              <h2>2. Choose Review Method</h2>
-              <div class="card-grid">
-                <div class="card" onclick="showPage('text-review')"><h2>✍️ Review via Text</h2><p>Submit your task solution directly as text.</p></div>
-                <div class="card" onclick="showPage('file-review')"><h2>📂 Review via File</h2><p>Upload a file for review.</p></div>
-                <div class="card" onclick="showPage('link-review')"><h2>🔗 Review via Link</h2><p>Submit a GitHub link to your file.</p></div>
-              </div>
-              <button class="back-btn" onclick="showPage('create-task-page')">⬅ Back to Create Task</button>
-        </div>
-        <div class="page form-section" id="text-review">
-            <h2>Submit via Text</h2>
-            <form id="review-form-text">
-                <label for="review-task-id-text">Task ID:</label><input type="text" id="review-task-id-text" readonly>
-                <label for="submission-text">Submission Text:</label><textarea id="submission-text" required>def add(a, b): return a + b</textarea>
-                <div class="button-group"><button type="submit">Run Review</button><div class="spinner" id="spinner-text"></div></div>
-            </form>
-            <button class="back-btn" onclick="showPage('review-options-page')">⬅ Back</button>
-        </div>
-        <div class="page form-section" id="file-review">
-            <h2>Submit via File Upload</h2>
-            <form id="review-form-file">
-                <label for="review-task-id-file">Task ID:</label><input type="text" id="review-task-id-file" readonly>
-                <label for="submission-file">Submission File:</label><input type="file" id="submission-file" required>
-                <div class="button-group"><button type="submit">Run Review</button><div class="spinner" id="spinner-file"></div></div>
-            </form>
-            <button class="back-btn" onclick="showPage('review-options-page')">⬅ Back</button>
         </div>
 
-        <div class="page form-section" id="link-review">
-            <h2>Submit via GitHub Link</h2>
-            <form id="review-form-link">
-                <label for="review-task-id-link">Task ID:</label><input type="text" id="review-task-id-link" readonly>
-                <label for="submission-link">GitHub Link:</label><input type="url" id="submission-link" placeholder="https://github.com/user/repo/blob/main/file.py" required>
-                <div class="button-group"><button type="submit">Run Review</button><div class="spinner" id="spinner-link"></div></div>
-            </form>
-            <button class="back-btn" onclick="showPage('review-options-page')">⬅ Back</button>
-        </div>
-        
-        <div class="page results-section" id="results-container">
-            <h2>Review Results</h2>
-            <div class="result-card"><div class="card-header score-header">✅ Review Score</div><pre class="card-body" id="review-output"></pre></div>
-            <div class="result-card"><div class="card-header feedback-header">💡 Feedback Note</div><pre class="card-body" id="note-output"></pre></div>
-            <div class="result-card" id="next-task-card" style="display: none;"><div class="card-header nexttask-header">📌 Suggested Next Task</div><pre class="card-body" id="next-task-output"></pre></div>
-            <div class="feedback-section" id="feedback-section">
-                <h3>Was this review helpful?</h3>
-                <button id="thumb-up-btn">👍</button> <button id="thumb-down-btn">👎</button>
-                <div id="feedback-status" style="margin-top: 1rem;"></div>
+        <div class="page" id="admin-dashboard-page">
+            <h1 id="admin-welcome-header">Admin Dashboard</h1>
+            <div class="dashboard-grid">
+                <aside class="dashboard-sidebar">
+                    <h2>Pending Reviews</h2>
+                    <ul id="pending-reviews-list" class="sidebar-list"></ul>
+                </aside>
+                <div class="main-content">
+                    <div id="admin-details-panel" class="card" style="display:none;"></div>
+                    <div id="admin-create-task" class="card">
+                        <h3>Create New Task</h3>
+                        <form id="create-task-form">
+                            <label for="task-id">Task ID:</label><input type="text" id="task-id" value="task-004" required>
+                            <label for="task-title">Title:</label><input type="text" id="task-title" value="Implement a caching layer" required>
+                            <label for="task-description">Description:</label><textarea id="task-description" required>Use an in-memory dictionary to cache results of a slow function.</textarea>
+                            <button type="submit">Create Task <span class="spinner" style="display:none;"></span></button>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <div class="button-group" style="justify-content: center; margin-top: 1rem;">
-                <button id="generate-next-task-btn" style="display: none;">Generate Next Task</button>
-                <div class="spinner" id="spinner-next-task" style="display: none;"></div>
-            </div>
-            <button class="back-btn" id="finish-btn" onclick="goHome()">🎉 Finish & Start Over</button>
         </div>
-    </div>
+
+        <div class="page" id="user-dashboard-page">
+            <h1 id="user-welcome-header"></h1>
+            <div class="dashboard-grid">
+                <aside class="dashboard-sidebar">
+                    <h2>Available Tasks</h2>
+                    <ul id="available-tasks-list" class="sidebar-list"></ul>
+                    <h2>My Submissions</h2>
+                    <ul id="user-submissions-list" class="sidebar-list"></ul>
+                </aside>
+                <div id="user-main-content" class="main-content">
+                     <div class="card">Select a task to submit, or view a past submission.</div>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <script>
         const API_BASE_URL = "http://127.0.0.1:8000";
-        const API_KEY = "BHIV"; // <-- 🚨 IMPORTANT: REPLACE WITH YOUR KEY FROM .env
+        const API_KEY = "BHIV";
         const HEADERS = { 'Content-Type': 'application/json', 'X-API-Key': API_KEY };
-        let currentReviewId = null; 
 
+        let currentUser = null;
+        let isAdmin = false;
+
+        const userLoginForm = document.getElementById('user-login-form');
+        const adminLoginForm = document.getElementById('admin-login-form');
         const createTaskForm = document.getElementById('create-task-form');
-        const reviewFormText = document.getElementById('review-form-text');
-        const reviewFormFile = document.getElementById('review-form-file');
-        // <-- NEW: Get the link form -->
-        const reviewFormLink = document.getElementById('review-form-link');
-        const thumbUpBtn = document.getElementById('thumb-up-btn');
-        const thumbDownBtn = document.getElementById('thumb-down-btn');
-        const generateNextTaskBtn = document.getElementById('generate-next-task-btn');
+        const header = document.querySelector('.header');
 
         function showPage(pageId) {
-            document.querySelectorAll(".page").forEach(el => el.classList.remove("active"));
-            document.getElementById(pageId).classList.add("active");
-        }
-        function goHome() { location.reload(); }
-
-        createTaskForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const taskId = document.getElementById('task-id').value;
-            const spinner = document.getElementById('spinner-create');
-            const submitButton = createTaskForm.querySelector('button[type="submit"]');
-            const statusDiv = document.getElementById('create-status');
-
-            spinner.style.display = 'block'; submitButton.disabled = true; statusDiv.innerHTML = '';
-            try {
-                const response = await fetch(`${API_BASE_URL}/tasks`, {
-                    method: 'POST', headers: HEADERS,
-                    body: JSON.stringify({ task_id: taskId, title: document.getElementById('task-title').value, description: document.getElementById('task-description').value })
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.detail || 'Failed to create task');
-                
-                // <-- MODIFIED: Pre-fill all three forms -->
-                document.getElementById('review-task-id-text').value = taskId;
-                document.getElementById('review-task-id-file').value = taskId;
-                document.getElementById('review-task-id-link').value = taskId;
-                
-                showPage('review-options-page');
-            } catch (error) {
-                statusDiv.className = 'status error'; statusDiv.textContent = `Error: ${error.message}`;
-            } finally {
-                spinner.style.display = 'none'; submitButton.disabled = false;
-            }
-        });
-
-        function displayResults(result) {
-            currentReviewId = result.review_id; 
-            document.getElementById('review-output').textContent = JSON.stringify(result.review, null, 2);
-            document.getElementById('note-output').textContent = result.feedback_note.note;
-            document.getElementById('feedback-section').style.display = 'block';
-            document.getElementById('next-task-card').style.display = 'none';
-            generateNextTaskBtn.style.display = 'none';
-            thumbUpBtn.disabled = false;
-            thumbDownBtn.disabled = false;
-            document.getElementById('feedback-status').innerHTML = '';
-            showPage('results-container');
+            document.querySelectorAll(".page").forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            header.style.display = (pageId === 'login-page') ? 'none' : 'flex';
         }
 
-        // <-- MODIFIED: handleReview now supports the link form -->
-        async function handleReview(form, spinner) {
-            spinner.style.display = 'block'; form.querySelector('button[type="submit"]').disabled = true;
-            try {
-                let response;
-                if (form.id === 'review-form-text') {
-                    const taskId = document.getElementById('review-task-id-text').value;
-                    const submissionText = document.getElementById('submission-text').value;
-                    response = await fetch(`${API_BASE_URL}/full-review-text/${taskId}`, { method: 'POST', headers: HEADERS, body: JSON.stringify({ submission_text: submissionText }) });
-                } else if (form.id === 'review-form-file') {
-                    const taskId = document.getElementById('review-task-id-file').value;
-                    const formData = new FormData();
-                    formData.append('submission_file', document.getElementById('submission-file').files[0]);
-                    response = await fetch(`${API_BASE_URL}/full-review-file/${taskId}`, { method: 'POST', headers: { 'X-API-Key': API_KEY }, body: formData });
-                } else if (form.id === 'review-form-link') { // <-- NEW: Logic for link submission -->
-                    const taskId = document.getElementById('review-task-id-link').value;
-                    const submissionLink = document.getElementById('submission-link').value;
-                    response = await fetch(`${API_BASE_URL}/full-review-link/${taskId}`, { method: 'POST', headers: HEADERS, body: JSON.stringify({ submission_link: submissionLink }) });
-                }
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.detail || 'An unknown error occurred.');
-                displayResults(result);
-            } catch (error) {
-                alert(`Error: ${error.message}`);
-            } finally {
-                spinner.style.display = 'none'; form.querySelector('button[type="submit"]').disabled = false;
+        // NEW UI Function: Switch between user/admin tabs on login page
+        function switchLoginTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tab-btn[onclick="switchLoginTab('${tabName}')"]`).classList.add('active');
+            
+            document.querySelectorAll('.login-form').forEach(form => form.classList.remove('active'));
+            document.getElementById(`${tabName}-login-form`).classList.add('active');
+        }
+
+        function logout() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        async function handleFormSubmit(form, callback) {
+            const button = form.querySelector('button[type="submit"]');
+            if (!button) return;
+            const spinner = button.querySelector('.spinner');
+            button.disabled = true;
+            if (spinner) spinner.style.display = 'inline-block';
+            try { await callback(); } 
+            catch (error) { alert(`Error: ${error.message}`); } 
+            finally {
+                button.disabled = false;
+                if (spinner) spinner.style.display = 'none';
             }
         }
         
-        async function sendFeedback(sentiment) {
-            // ... (this function is the same as before)
-            if (!currentReviewId) return;
-            const statusDiv = document.getElementById('feedback-status');
-            statusDiv.className = 'status';
-            statusDiv.textContent = 'Sending feedback...';
-            thumbUpBtn.disabled = true; thumbDownBtn.disabled = true;
-            try {
-                const response = await fetch(`${API_BASE_URL}/feedback/${currentReviewId}`, {
-                    method: 'POST', headers: HEADERS, body: JSON.stringify({ sentiment: sentiment })
-                });
-                if (!response.ok) { const result = await response.json(); throw new Error(result.detail || 'Failed to send feedback.'); }
-                document.getElementById('feedback-section').style.display = 'none';
-                if (sentiment === 'up') {
-                    generateNextTaskBtn.style.display = 'block';
-                } else {
-                    statusDiv.className = 'status';
-                    statusDiv.textContent = `Thank you for the feedback. Please consider revising your task and trying again.`;
-                }
-            } catch (error) {
-                statusDiv.className = 'status error'; statusDiv.textContent = `Error: ${error.message}`;
-                thumbUpBtn.disabled = false; thumbDownBtn.disabled = false;
+        document.addEventListener('DOMContentLoaded', () => {
+            currentUser = localStorage.getItem('loggedInUser');
+            isAdmin = localStorage.getItem('isAdmin') === 'true';
+            if (currentUser) {
+                if (isAdmin) showAdminDashboard();
+                else showUserDashboard(currentUser);
+            } else {
+                showPage('login-page');
             }
+        });
+
+        userLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            currentUser = username;
+            localStorage.setItem('loggedInUser', username);
+            localStorage.setItem('isAdmin', 'false');
+            showUserDashboard(username);
+        });
+
+        adminLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleFormSubmit(adminLoginForm, async () => {
+                const password = document.getElementById('admin-password').value;
+                const response = await fetch(`${API_BASE_URL}/auth/admin`, {
+                    method: 'POST', headers: HEADERS, body: JSON.stringify({ password })
+                });
+                if (!response.ok) { const err = await response.json(); throw new Error(err.detail); }
+                localStorage.setItem('loggedInUser', 'admin');
+                localStorage.setItem('isAdmin', 'true');
+                showAdminDashboard();
+            });
+        });
+
+        async function showAdminDashboard() {
+            showPage('admin-dashboard-page');
+            const list = document.getElementById('pending-reviews-list');
+            list.innerHTML = '<li class="sidebar-link">Loading...</li>';
+            const response = await fetch(`${API_BASE_URL}/admin/pending-reviews`, { headers: HEADERS });
+            const reviews = await response.json();
+            list.innerHTML = '';
+            if (reviews.length === 0) list.innerHTML = '<li class="sidebar-link">No pending reviews.</li>';
+            reviews.forEach(review => {
+                const item = document.createElement('li');
+                item.className = 'sidebar-link';
+                item.innerHTML = `<div><strong>${review.task_id}</strong><div style="font-size:0.8em; color: var(--text-secondary)">by ${review.username}</div></div>`;
+                item.onclick = () => {
+                    document.querySelectorAll('#pending-reviews-list li').forEach(li => li.classList.remove('selected'));
+                    item.classList.add('selected');
+                    displayAdminReviewDetails(review);
+                };
+                list.appendChild(item);
+            });
+        }
+        
+        function displayAdminReviewDetails(review) {
+            const panel = document.getElementById('admin-details-panel');
+            panel.style.display = 'block';
+            panel.innerHTML = `
+                <h3>Review for ${review.task_id} by ${review.username}</h3>
+                <dl class="data-grid">
+                    <dt>AI Score</dt><dd><span class="score-badge score-ai">${review.review_data.score}/10</span></dd>
+                    <dt>Done Well</dt><dd>${review.review_data.done_well.join(', ') || 'N/A'}</dd>
+                    <dt>To Improve</dt><dd>${review.review_data.missing.join(', ') || 'N/A'}</dd>
+                </dl>
+                <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+                <h4>Provide DHI Feedback</h4>
+                <form id="feedback-form">
+                    <label>Dignity: <b id="d-val">5</b></label><input type="range" id="dignity" min="1" max="10" value="5" oninput="document.getElementById('d-val').innerText = this.value">
+                    <label>Honesty: <b id="h-val">5</b></label><input type="range" id="honesty" min="1" max="10" value="5" oninput="document.getElementById('h-val').innerText = this.value">
+                    <label>Integrity: <b id="i-val">5</b></label><input type="range" id="integrity" min="1" max="10" value="5" oninput="document.getElementById('i-val').innerText = this.value">
+                    <button type="submit">Submit Feedback <span class="spinner" style="display:none;"></span></button>
+                </form>`;
+            
+            const feedbackForm = document.getElementById('feedback-form');
+            feedbackForm.addEventListener('submit', e => {
+                e.preventDefault();
+                handleFormSubmit(feedbackForm, async () => {
+                    const payload = {
+                        sentiment: 'up',
+                        dhi_scores: {
+                            dignity: parseInt(document.getElementById('dignity').value),
+                            honesty: parseInt(document.getElementById('honesty').value),
+                            integrity: parseInt(document.getElementById('integrity').value)
+                        }
+                    };
+                    const response = await fetch(`${API_BASE_URL}/feedback/${review.review_id}`, { method: 'POST', headers: HEADERS, body: JSON.stringify(payload) });
+                    if(!response.ok) { const err = await response.json(); throw new Error(err.detail); }
+                    alert('Feedback submitted successfully!');
+                    panel.style.display = 'none';
+                    showAdminDashboard();
+                });
+            });
         }
 
-        async function generateNextTask() {
-            // ... (this function is the same as before)
-            if (!currentReviewId) return;
-            const spinner = document.getElementById('spinner-next-task');
-            spinner.style.display = 'block';
-            generateNextTaskBtn.disabled = true;
-            try {
-                const response = await fetch(`${API_BASE_URL}/generate-next-task/${currentReviewId}`, {
-                    method: 'POST', headers: { 'X-API-Key': API_KEY }
+        createTaskForm.addEventListener('submit', e => {
+            e.preventDefault();
+            handleFormSubmit(createTaskForm, async () => {
+                const response = await fetch(`${API_BASE_URL}/tasks`, {
+                    method: 'POST', headers: HEADERS,
+                    body: JSON.stringify({
+                        task_id: document.getElementById('task-id').value,
+                        title: document.getElementById('task-title').value,
+                        description: document.getElementById('task-description').value
+                    })
                 });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.detail || 'Failed to generate next task.');
-                document.getElementById('next-task-output').textContent = JSON.stringify(result.next_task, null, 2);
-                document.getElementById('next-task-card').style.display = 'block';
-                generateNextTaskBtn.style.display = 'none'; 
-            } catch (error) {
-                alert(`Error generating next task: ${error.message}`);
-                generateNextTaskBtn.disabled = false;
-            } finally {
-                spinner.style.display = 'none';
-            }
+                if (!response.ok) { const err = await response.json(); throw new Error(err.detail); }
+                alert('Task created!');
+                createTaskForm.reset();
+            });
+        });
+
+        async function showUserDashboard(username) {
+            showPage('user-dashboard-page');
+            document.getElementById('user-welcome-header').innerText = `Welcome, ${username}!`;
+            await loadAvailableTasks();
+            await loadUserSubmissions(username);
         }
 
-        reviewFormText.addEventListener('submit', (e) => { e.preventDefault(); handleReview(reviewFormText, document.getElementById('spinner-text')); });
-        reviewFormFile.addEventListener('submit', (e) => { e.preventDefault(); handleReview(reviewFormFile, document.getElementById('spinner-file')); });
-        // <-- NEW: Event listener for the link form -->
-        reviewFormLink.addEventListener('submit', (e) => { e.preventDefault(); handleReview(reviewFormLink, document.getElementById('spinner-link')); });
+        async function loadAvailableTasks() {
+            const list = document.getElementById('available-tasks-list');
+            list.innerHTML = '<li class="sidebar-link">Loading...</li>';
+            const response = await fetch(`${API_BASE_URL}/tasks/all`, { headers: HEADERS });
+            const tasks = await response.json();
+            list.innerHTML = '';
+            tasks.forEach(task => {
+                const item = document.createElement('li');
+                item.className = 'sidebar-link';
+                item.innerHTML = `<strong>${task.task_id}</strong>: ${task.title}`;
+                item.onclick = () => {
+                    document.querySelectorAll('.sidebar-list li').forEach(li => li.classList.remove('selected'));
+                    item.classList.add('selected');
+                    showSubmissionChoices(task);
+                };
+                list.appendChild(item);
+            });
+        }
 
-        thumbUpBtn.addEventListener('click', () => sendFeedback('up'));
-        thumbDownBtn.addEventListener('click', () => sendFeedback('down'));
-        generateNextTaskBtn.addEventListener('click', generateNextTask);
+        async function loadUserSubmissions(username) {
+            const list = document.getElementById('user-submissions-list');
+            list.innerHTML = '<li class="sidebar-link">Loading...</li>';
+            const response = await fetch(`${API_BASE_URL}/user/${username}/reviews`, { headers: HEADERS });
+            const reviews = await response.json();
+            list.innerHTML = '';
+            if (reviews.length === 0) list.innerHTML = '<li class="sidebar-link">No submissions yet.</li>';
+            reviews.forEach(review => {
+                const item = document.createElement('li');
+                item.className = 'sidebar-link';
+                item.innerHTML = `<strong>${review.task_id}</strong> <span class="status-tag status-${review.status}">${review.status.replace('_', ' ')}</span>`;
+                item.onclick = () => {
+                    document.querySelectorAll('.sidebar-list li').forEach(li => li.classList.remove('selected'));
+                    item.classList.add('selected');
+                    displayUserReviewDetails(review);
+                };
+                list.appendChild(item);
+            });
+        }
+
+        function showSubmissionChoices(task) {
+            const contentPanel = document.getElementById('user-main-content');
+            const taskJsonString = JSON.stringify(task).replace(/"/g, '&quot;');
+            contentPanel.innerHTML = `
+                <div class="card">
+                    <h3>Submit for: ${task.title}</h3>
+                    <p>${task.description}</p>
+                    <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+                    <h4>Choose Submission Method:</h4>
+                    <div class="choice-grid">
+                        <div class="choice-card" onclick='renderSpecificSubmissionForm(${taskJsonString}, "text")'><h3>✍️ Submit as Text</h3></div>
+                        <div class="choice-card" onclick='renderSpecificSubmissionForm(${taskJsonString}, "file")'><h3>📂 Submit a File</h3></div>
+                        <div class="choice-card" onclick='renderSpecificSubmissionForm(${taskJsonString}, "link")'><h3>🔗 Submit a Link</h3></div>
+                    </div>
+                </div>`;
+        }
+        
+        function renderSpecificSubmissionForm(task, formType) {
+            const contentPanel = document.getElementById('user-main-content');
+            let formHTML = '';
+            if (formType === 'text') formHTML = `<h3>Submit via Text</h3><form id="user-submission-form"><label for="submission-text">Submission Text:</label><textarea id="submission-text" required placeholder="Paste your code or text here..."></textarea><button type="submit">Submit for AI Review <span class="spinner" style="display:none;"></span></button></form>`;
+            else if (formType === 'file') formHTML = `<h3>Submit via File</h3><form id="user-submission-form"><label for="submission-file">Submission File:</label><input type="file" id="submission-file" required><button type="submit">Submit for AI Review <span class="spinner" style="display:none;"></span></button></form>`;
+            else if (formType === 'link') formHTML = `<h3>Submit via Link</h3><form id="user-submission-form"><label for="submission-link">GitHub Link to Submission:</label><input type="url" id="submission-link" placeholder="https://github.com/..." required><button type="submit">Submit for AI Review <span class="spinner" style="display:none;"></span></button></form>`;
+            contentPanel.innerHTML = `<div class="card">${formHTML}</div>`;
+            document.getElementById('user-submission-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                handleFormSubmit(e.target, async () => {
+                    const url = `${API_BASE_URL}/review/${formType}/${task.task_id}/${currentUser}`;
+                    let response;
+                    if (formType === 'file') {
+                        const formData = new FormData();
+                        formData.append('submission_file', document.getElementById('submission-file').files[0]);
+                        response = await fetch(url, { method: 'POST', headers: { 'X-API-Key': API_KEY }, body: formData });
+                    } else {
+                        const payload = formType === 'text' ? { submission_text: document.getElementById('submission-text').value } : { submission_link: document.getElementById('submission-link').value };
+                        response = await fetch(url, { method: 'POST', headers: HEADERS, body: JSON.stringify(payload) });
+                    }
+                    const result = await response.json();
+                    if (!response.ok) { throw new Error(result.detail || 'Failed to submit'); }
+                    displayUserReviewDetails(result);
+                    loadUserSubmissions(currentUser);
+                });
+            });
+        }
+        
+        function displayUserReviewDetails(review) {
+            const contentPanel = document.getElementById('user-main-content');
+            let nextTaskButtonHTML = '';
+            if (review.status === 'pending_feedback') nextTaskButtonHTML = `<button disabled>Next Task Locked (Awaiting Admin Feedback)</button>`;
+            else if (review.status === 'feedback_provided' && !review.next_task.title) nextTaskButtonHTML = `<button id="generate-next-task-btn">Generate Next Task <span class="spinner" style="display:none;"></span></button>`;
+            
+            let finalScoresHTML = ``;
+            if (review.status !== 'pending_feedback') finalScoresHTML = `<dt>Final Score</dt><dd><span class="score-badge score-overall">${review.overall_score}/10</span></dd>`;
+
+            // UI Enhancement: Render objectives as a proper list
+            const objectivesHTML = review.next_task.title 
+                ? `<hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+                   <h4>Next Task: ${review.next_task.title}</h4>
+                   <p>${review.next_task.deliverables}</p>
+                   <ul class="objectives-list">${review.next_task.objectives.map(obj => `<li>${obj}</li>`).join('')}</ul>` 
+                : '';
+
+            contentPanel.innerHTML = `
+                <div class="card">
+                    <h3>Review Details: ${review.task_id}</h3>
+                    <dl class="data-grid">
+                        <dt>Status</dt><dd><span class="status-tag status-${review.status}">${review.status.replace('_', ' ')}</span></dd>
+                        <dt>AI Score</dt><dd><span class="score-badge score-ai">${review.review_data.score}/10</span></dd>
+                        ${finalScoresHTML}
+                        <dt>AI Note</dt><dd>${review.feedback_note}</dd>
+                        <dt>Done Well</dt><dd>${review.review_data.done_well.join(', ') || 'N/A'}</dd>
+                        <dt>To Improve</dt><dd>${review.review_data.missing.join(', ') || 'N/A'}</dd>
+                    </dl>
+                    ${objectivesHTML}
+                    <div style="margin-top: 2rem;">${nextTaskButtonHTML}</div>
+                </div>`;
+            
+            if (review.status === 'feedback_provided' && !review.next_task.title) {
+                const nextTaskBtn = document.getElementById('generate-next-task-btn');
+                nextTaskBtn.addEventListener('click', async () => {
+                    const spinner = nextTaskBtn.querySelector('.spinner');
+                    nextTaskBtn.disabled = true;
+                    if (spinner) spinner.style.display = 'inline-block';
+                    try {
+                        const url = `${API_BASE_URL}/generate-next-task/${review.review_id}`;
+                        const response = await fetch(url, { method: 'POST', headers: HEADERS });
+                        const result = await response.json();
+                        if (!response.ok) { throw new Error(result.detail || 'Failed to generate task'); }
+                        displayUserReviewDetails(result.updated_record);
+                        loadUserSubmissions(currentUser);
+                    } catch (error) {
+                        alert(`Error: ${error.message}`);
+                        nextTaskBtn.disabled = false;
+                        if (spinner) spinner.style.display = 'none';
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html>
