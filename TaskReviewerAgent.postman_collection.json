@@ -1,0 +1,340 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+		"name": "Task Reviewer Agent API",
+		"description": "A collection of API requests for the role-based Task Reviewer Agent.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Admin Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"password\": \"{{adminPassword}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/admin",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"admin"
+							]
+						},
+						"description": "Authenticate as an admin to get access to admin-level endpoints."
+					},
+					"response": []
+				}
+			],
+			"description": "Handles authentication for different roles."
+		},
+		{
+			"name": "Admin Functions",
+			"item": [
+				{
+					"name": "Create a New Task Definition",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"task_id\": \"{{task_id}}\",\n    \"title\": \"Build a REST API Endpoint\",\n    \"description\": \"Create a new GET endpoint in a FastAPI application that returns a list of users.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tasks"
+							]
+						},
+						"description": "Admin-only endpoint to create a new task definition in the database."
+					},
+					"response": []
+				},
+				{
+					"name": "Provide DHI Feedback",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sentiment\": \"up\",\n    \"dhi_scores\": {\n        \"dignity\": 8,\n        \"honesty\": 9,\n        \"integrity\": 10\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/feedback/{{review_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"feedback",
+								"{{review_id}}"
+							]
+						},
+						"description": "Admin provides DHI scores for a user's submission to unlock the next step."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints restricted to Admin users."
+		},
+		{
+			"name": "User Functions",
+			"item": [
+				{
+					"name": "Submit Review (Link)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"submission_link\": \"https://raw.githubusercontent.com/user/repo/main/file.py\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/review/link/{{task_id}}/{{username}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"review",
+								"link",
+								"{{task_id}}",
+								"{{username}}"
+							]
+						},
+						"description": "A user submits their work for a specific task via a URL."
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Review (Text)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"submission_text\": \"def my_solution(arg1, arg2):\\n    return arg1 + arg2\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/review/text/{{task_id}}/{{username}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"review",
+								"text",
+								"{{task_id}}",
+								"{{username}}"
+							]
+						},
+						"description": "A user submits their work for a specific task as raw text."
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Next Task",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/generate-next-task/{{review_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"generate-next-task",
+								"{{review_id}}"
+							]
+						},
+						"description": "After admin feedback is provided, the user can generate a follow-up task."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for user interactions."
+		},
+		{
+			"name": "Data Retrieval",
+			"item": [
+				{
+					"name": "Get All Tasks",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/tasks/all",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tasks",
+								"all"
+							]
+						},
+						"description": "Fetches a list of all available tasks for users to see."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pending Reviews (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/pending-reviews",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"pending-reviews"
+							]
+						},
+						"description": "Admin fetches all submissions that are awaiting DHI feedback."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User's Reviews",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user/{{username}}/reviews",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user",
+								"{{username}}",
+								"reviews"
+							]
+						},
+						"description": "Fetches the entire submission history for a specific user."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific Review Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/review/{{review_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"review",
+								"{{review_id}}"
+							]
+						},
+						"description": "Retrieves the complete, up-to-date record for a single review."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for fetching data."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://127.0.0.1:8000",
+			"type": "string"
+		},
+		{
+			"key": "apiKey",
+			"value": "BHIV",
+			"type": "string"
+		},
+		{
+			"key": "adminPassword",
+			"value": "your_secret_admin_password",
+			"type": "string"
+		},
+		{
+			"key": "task_id",
+			"value": "task-pm-001",
+			"type": "string"
+		},
+		{
+			"key": "review_id",
+			"value": "your_review_id",
+			"type": "string"
+		},
+		{
+			"key": "username",
+			"value": "dev_01",
+			"type": "string"
+		}
+	],
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{
+				"key": "value",
+				"value": "{{apiKey}}",
+				"type": "string"
+			},
+			{
+				"key": "key",
+				"value": "X-API-Key",
+				"type": "string"
+			}
+		]
+	}
+}
